@@ -1,0 +1,23 @@
+[project]
+name = "ai-agents-and-harnesses-foundations"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "PLH", email = "peilan.ai.generyn@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "langchain>=1.5.0",
+    "langchain-anthropic>=1.7.10",
+    "langchain-core>=1.8.0",
+    "langchain-ollama>=1.1.0",
+    "python-dotenv>=1.2.4",
+]
+
+[project.scripts]
+ai-agents-and-harnesses-foundations = "ai_agents_and_harnesses_foundations:main"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
