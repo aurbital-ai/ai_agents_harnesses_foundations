@@ -3,15 +3,16 @@ load_dotenv()
 
 import re
 import inspect
+import textwrap
 
 import ollama
 from langsmith import traceable
 
-MAX_ITERATIONS = 3
+MAX_ITERATIONS = 5
 # MODEL = "gemma4:12b"
-MODEL = "ministral-3:14b"
+# MODEL = "ministral-3:14b"
 # MODEL = "qwen3.5:9b"
-# MODEL = "mistral:latest"
+MODEL = "mistral:latest"
 
 
 # ----- tools -----
@@ -38,7 +39,8 @@ def apply_discount(price: float, discount_tier: str) -> float:
                "silver": 12,
                "gold": 23}
     discount = discounts.get(discount_tier, 0)
-    return round(price*(1-discount/100), 2)
+    print(f"discount: {discount}")
+    return round(float(price) * (1-discount/100), 2)
 
 # define tools dictionary
 tools = {
@@ -65,17 +67,17 @@ tool_names = ",".join(tools.keys())
 # ----- ReAct prompt -----
 # See original template https://smith.langchain.com/hub/hwchase17/react?organizationId=10a67c4b-8a89-4988-aed8-66dd86c8d3d4
 
-react_prompt = f"""
-    STRICT RULES - you must follow these exactly:\n
-    1. NEVER guess or assume any product price. You MUST call get_product_price first to get the real price.\n
+react_prompt = textwrap.dedent("""
+    STRICT RULES - you must follow these exactly:
+    1. NEVER guess or assume any product price. You MUST call get_product_price first to get the real price.
     2. Only call apply_discount AFTER you have received a price from get_product_price.
-    Pass the exact price returned by get_product_price - do NOT modify this number or make up a different number.\n
-    3. NEVER calculate discounts yourself using math. Always use the apply_discount tool.\n
-    4. If the user does not specify a discount tier, ask them which tier to use - do NOT assume one.\n\n
-    
+    Pass the exact price returned by get_product_price - do NOT modify this number or make up a different number.
+    3. NEVER calculate discounts yourself using math. Always use the apply_discount tool.
+    4. If the user does not specify a discount tier, ask them which tier to use - do NOT assume one.
+
     Answer the following questions as best you can. You have access to the following tools: {tool_descriptions}
 
-    Use the following format:
+    STRICT RULES - use the following output format:
 
     Question: the input question you must answer
     Thought: you should always think about what to do
@@ -89,10 +91,10 @@ react_prompt = f"""
     Begin!
 
     Question: {{question}}
-    Thought:
-"""
+    Thought:"""
+).format(tool_descriptions=tool_descriptions, tool_names=tool_names)
 
-
+print(react_prompt)
 
 # ----- agent  -----
 
@@ -106,6 +108,7 @@ def run_agent(question: str):
     print("\n\n")
     print("*"*60)
     print(f"MODEL: {MODEL}")
+    print("\n\n")
     print("="*60)
     print(f"Question: {question}")
     print("="*60)
@@ -120,21 +123,52 @@ def run_agent(question: str):
         print("-"*60)
         print(f"--- Iteration {iteration} ---")
         full_prompt = prompt + scratchpad
-        print(f"full_prompt:\n{full_prompt}")
+        # print(f"full_prompt:\n{full_prompt}")
 
         # stop token prevents LLLM from generating its own Observation, allows us to inject the real result here
         response = ollama_chat_traced(
             model=MODEL,
             messages = [{"role": "user", "content": full_prompt}],
-            options = {"stop": ["\nObservation"], "temperature":0}
+            # options = {"temperature": 0, "num_predict": 500} # num_predict recommended by Claude for runaway LLMs, between 200-500
+            options = {"stop": ["\nObservation"], "temperature":0, "num_predict": 500} # Claude: ollama MLX engine ignores the stop sequence
         )
         print("-"*30)
-        print(f"LLM thinking for Iteration {iteration}: {response.message.thinking}")
+        print(f"LLM thinking for Iteration {iteration}:\n{response.message.thinking}")
         print("-"*30)
-        print(f"LLM output for Iteration {iteration}: {response.message.content}")
+        print(f"LLM output for Iteration {iteration}:\n{response.message.content}")
         print("-"*30)
-    output = response.message.content 
-    print(f"LLM Output: \n{output}")
+        
+        output = response.message.content
+
+        # final answer match
+        final_answer_match = re.search(r"Final Answer:\s*(.+)", output)
+        if final_answer_match:
+            final_answer = final_answer_match.group(1).strip()
+            print(f"[Parsed] Final Answer: {final_answer}")
+            print("="*60)
+            print(f"Final Answer: {final_answer}")
+            return final_answer
+
+        # action match
+        action_match = re.search(r"Action: (.*)", output)
+        action_input_match = re.search(r"Action Input: (.*)", output)
+        if not (action_match and action_input_match):
+            raise ValueError ("Could not parse both action and action input from LLM output")
+        tool_name = action_match.group(1)
+        tool_input_run = action_input_match.group(1)
+        print(f"tool_name: {tool_name}, tool_input_run: {tool_input_run}")
+        if tool_name not in tools:
+            observation = f"Error: Tool '{tool_name}' not found. Available tools: {list(tools.keys())}"
+        else:
+            tool_fn = tools[tool_name]
+            args = [a.strip() for a in tool_input_run.split(",")]
+            print(args)
+            result = tool_fn(*args)
+            observation=str(result)
+            print(f"[Tool Result] {observation}")
+            scratchpad += f"{output}\nObservation: {observation}\nThought:"
+        print("-"*30)
+    return None
 
 
 if __name__ == "__main__":
