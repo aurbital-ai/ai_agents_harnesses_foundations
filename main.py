@@ -8,7 +8,6 @@ from langsmith import traceable
 
 MAX_ITERATIONS = 5
 MODEL = "qwen3.5:9b"
-MODEL 
 
 # ----- tools -----
 
@@ -45,7 +44,7 @@ tools_dict = {tool.name: tool for tool in tools}
 
 # llm = init_chat_model(MODEL, model_provider="ollama") # this works, just another way to write it
 # llm = init_chat_model("ollama:qwen3.5:9b")
-llm = init_chat_model("ollama:gemma4:12b")
+llm = init_chat_model("ollama:gemma4:12b", reasoning=True)
 # llm = init_chat_model("ollama:mistral:latest")
 # llm = init_chat_model("anthropic:claude-haiku-4-5")
 
@@ -73,6 +72,7 @@ def run_agent(question: str):
     for iteration in range(1, MAX_ITERATIONS+1):
         print(f"\n--- Iteration {iteration} ---")
         ai_message = llm_with_tools.invoke(messages)
+        print(ai_message.additional_kwargs.get("reasoning_content", "(no reasoning returned)"))
         tool_calls = ai_message.tool_calls
         if not tool_calls:
             break
@@ -88,10 +88,12 @@ def run_agent(question: str):
             print(f"[Tool Result] {observation}")
             messages.append(ai_message)
             messages.append(ToolMessage(content=str(observation), tool_call_id=tool_call_id))
-    print(ai_message.text)
+    print("agent_loop exited")
+    return (ai_message.text)
 
 
 if __name__ == "__main__":
     print("LangChain agent with tool calling\n")
     result = run_agent("What is the price of the laptop after applying the gold discount?")
-    print("done")
+    print(result)
+    # print("done")
