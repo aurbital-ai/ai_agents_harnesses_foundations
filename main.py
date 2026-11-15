@@ -7,7 +7,8 @@ from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langsmith import traceable
 
 MAX_ITERATIONS = 5
-# MODEL = "qwen3.5:9b"
+MODEL = "qwen3.5:9b"
+MODEL = "gemma4:12b"
 
 # ----- tools -----
 
@@ -42,18 +43,20 @@ tools_dict = {tool.name: tool for tool in tools}
 
 # ----- agent  -----
 
-# llm = init_chat_model(MODEL, model_provider="ollama", reasoning=True) # this works, just another way to write it
+llm = init_chat_model(MODEL, model_provider="ollama", reasoning=True) # use this one
 # llm = init_chat_model("ollama:qwen3.5:9b", reasoning=True)
 # llm = init_chat_model("ollama:gemma4:12b", reasoning=True)
-llm = init_chat_model("ollama:mistral:latest")
-# llm = init_chat_model("anthropic:claude-haiku-4-5", reasoning=True)
+# llm = init_chat_model("ollama:mistral:latest") # does not support reasoning
+# llm = init_chat_model("ollama:ministral-3:14b") # does not support reasoning
+# llm = init_chat_model("anthropic:claude-haiku-4-5") # haiku 4.5 does not support reasoning via LangChain init_chat_model; use ChatAnthropic 
 
 llm_with_tools = llm.bind_tools(tools)
 
 
 @traceable(name="LangChain Agent Loop")
 def run_agent(question: str):
-    
+
+    print(f"Model: {MODEL}")
     messages = [
             SystemMessage(content="""You are a helpful shopping assistant. 
             You have access to a product catalog tool and a discount tool.
@@ -72,7 +75,7 @@ def run_agent(question: str):
     for iteration in range(1, MAX_ITERATIONS+1):
         print(f"\n--- Iteration {iteration} ---")
         ai_message = llm_with_tools.invoke(messages)
-        print(ai_message.additional_kwargs.get("reasoning_content", "(no reasoning returned)"))
+        print(f"\n\n----- Thinking -----\n{ai_message.additional_kwargs.get("reasoning_content", "(no reasoning returned)")}\n--------------------\n")
         tool_calls = ai_message.tool_calls
         if not tool_calls:
             break

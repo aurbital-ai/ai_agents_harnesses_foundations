@@ -95,8 +95,6 @@ def ollama_chat_traced(messages):
     return ollama.chat(model=MODEL, tools=tools_for_llm, messages=messages)
 
 
-
-
 @traceable(name="Ollama Agent Loop")
 def run_agent(question: str):
 
@@ -125,7 +123,7 @@ def run_agent(question: str):
 
     for iteration in range(1, MAX_ITERATIONS+1):
         print(f"\n--- Iteration {iteration} ---")
-        response = ollama_chat_traced(messages)
+        response = ollama_chat_traced(messages) # note: this is a fresh call every time
         print(f"\n\n----- Thinking -----\n{response.message.thinking}\n--------------------\n")
         ai_message = response.message
         tool_calls = ai_message.tool_calls
