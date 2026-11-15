@@ -8,6 +8,7 @@ from langsmith import traceable
 
 MAX_ITERATIONS = 5
 MODEL = "qwen3.5:9b"
+MODEL 
 
 # ----- tools -----
 
@@ -42,9 +43,12 @@ tools_dict = {tool.name: tool for tool in tools}
 
 # ----- agent  -----
 
-# llm = init_chat_model("ollama:qwen3.5:9b") # this works, just another way to write it
-# llm = init_chat_model(MODEL, model_provider="ollama")
-llm = init_chat_model("anthropic:claude-haiku-4-5")
+# llm = init_chat_model(MODEL, model_provider="ollama") # this works, just another way to write it
+# llm = init_chat_model("ollama:qwen3.5:9b")
+llm = init_chat_model("ollama:gemma4:12b")
+# llm = init_chat_model("ollama:mistral:latest")
+# llm = init_chat_model("anthropic:claude-haiku-4-5")
+
 llm_with_tools = llm.bind_tools(tools)
 
 
@@ -89,5 +93,5 @@ def run_agent(question: str):
 
 if __name__ == "__main__":
     print("LangChain agent with tool calling\n")
-    result = run_agent("What is the price of the laptop after applying the gold discount? There is only one laptop model.")
+    result = run_agent("What is the price of the laptop after applying the gold discount?")
     print("done")
