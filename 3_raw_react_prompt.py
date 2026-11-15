@@ -8,7 +8,8 @@ import ollama
 from langsmith import traceable
 
 MAX_ITERATIONS = 3
-MODEL = "gemma4:12b"
+# MODEL = "gemma4:12b"
+MODEL = "ministral-3:14b"
 # MODEL = "qwen3.5:9b"
 # MODEL = "mistral:latest"
 
@@ -102,6 +103,7 @@ def ollama_chat_traced(model, messages, options):
 
 @traceable(name="Ollama Agent Loop")
 def run_agent(question: str):
+    print("\n\n")
     print("*"*60)
     print(f"MODEL: {MODEL}")
     print("="*60)
