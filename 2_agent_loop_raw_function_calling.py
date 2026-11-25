@@ -8,6 +8,7 @@ MAX_ITERATIONS = 10
 # MODEL = "qwen3.5:9b"
 MODEL = "gemma4:12b"
 # MODEL = "mistral:latest"
+# MODEL = "ministral-3:14b"
 
 
 # ----- tools -----

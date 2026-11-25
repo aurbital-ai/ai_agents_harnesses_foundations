@@ -9,10 +9,10 @@ import ollama
 from langsmith import traceable
 
 MAX_ITERATIONS = 5
-# MODEL = "gemma4:12b"
-# MODEL = "ministral-3:14b"
-# MODEL = "qwen3.5:9b"
-MODEL = "mistral:latest"
+# MODEL = "gemma4:12b" # hallucinates an Observation without calling the tool despite explicit instructions
+# MODEL = "ministral-3:14b" # does not work -- output says **Action:** rather than Action:, does not parse 
+# MODEL = "qwen3.5:9b" # does not work -- gives a "final answer" in the first iteration
+MODEL = "mistral:latest" # the only one that works
 
 
 # ----- tools -----
